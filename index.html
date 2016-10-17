@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>SAD</title>
+		<link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.5.0/socket.io.js"></script>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/css/materialize.min.css">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/js/materialize.min.js"></script>
+		<style type="text/css">
+			ul.percentage { width: 100%; }
+			ul.percentage li { display: block; width: 0; border-radius: 5px; height: 40px;}
+			ul.percentage li span { float: right; display: block; }
+			ul.percentage li.pos { background: #ff0066; color: #fff }
+			ul.percentage li.neg { background: #000; color: #fff; }
+
+			ul.fpercentage { width: 100%; }
+			ul.fpercentage li { display: block; width: 0; border-radius: 5px; height: 40px;}
+			ul.fpercentage li span { float: right; display: block; }
+			ul.fpercentage li.fpos { background: #ff0066; color: #fff }
+			ul.fpercentage li.fneg { background: #000; color: #fff; }
+
+			li.avatar {height: 50px; overflow-y: scroll;}
+		</style>
+	</head>
+
+	<body>
+		<div class="container">
+			<div class="card row">
+				<div class="center-align" style="font-size: 40px;">Twitter Live Stream</div>
+				<div class="col s6">
+					<div class="pospro progress">
+    					<div class="indeterminate"></div>
+					</div>
+					<div>
+						<ul class="percentage"> 
+							<li class="pos left-align">Positive <span>0</span></li>
+						<ul>
+					</div>
+					<div>
+						<ul class="postweets collection"></ul>
+					</div>
+				</div>
+
+				<div class="col s6">
+					<div class="negpro progress">
+    					<div class="indeterminate"></div>
+					</div>
+					<div>
+						<ul class="percentage"> 
+							<li class="neg left-align">Negative <span>0</span></li> 
+						</ul>
+					</div>
+					<div>
+						<ul class="negtweets collection"></ul>
+					</div>
+				</div>
+			</div>
+
+			<div class="card row">
+				<div class="center-align" style="font-size: 40px;">Facebook Live Stream</div>
+				<div class="col s6">
+					<div class="fpospro progress">
+    					<div class="indeterminate"></div>
+					</div>
+					<div>
+						<ul class="fpercentage"> 
+							<li class="fpos left-align">Positive <span>0</span></li>
+						<ul>
+					</div>
+					<div>
+						<ul class="fpostweets collection"></ul>
+					</div>
+				</div>
+
+				<div class="col s6">
+					<div class="fpospro progress">
+    					<div class="indeterminate"></div>
+					</div>
+					<div>
+						<ul class="fpercentage"> 
+							<li class="fneg left-align">Negative <span>0</span></li> 
+						</ul>
+					</div>
+					<div>
+						<ul class="fnegtweets collection"></ul>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script type="text/javascript">
+			var socket = io.connect('http://localhost:3000/');
+			jQuery(function($){
+				var posTweetList = $('ul.postweets');
+				var negTweetList = $('ul.negtweets');
+				var posCounter = $('li.pos');
+				var negCounter = $('li.neg');
+				var posPer = $('li.pos span');
+				var negPer = $('li.neg span');
+
+				socket.on('tweet', function(data){
+					if(data.set > 0) {
+						$('.pospro').remove();
+						posTweetList.prepend('<li class="collection-item avatar"><img src="' + data.image + '" alt="" class="circle">' + '<span class="title">' + data.user  + '(' + data.set + ')' + '</span><p>' + data.text + '</p></li>');
+					}
+					if(data.set < 0) {
+						$('.negpro').remove();
+						negTweetList.prepend('<li class="collection-item avatar"><img src="' + data.image + '" alt="" class="circle">' + '<span class="title">' + data.user  + '(' + data.set + ')' + '</span><p>' + data.text + '</p></li>');
+					}
+					
+					if($('ul.postweets li').length > 5)
+						$('ul.postweets li:last-child').remove();
+					if($('ul.negtweets li').length > 5)
+						$('ul.negtweets li:last-child').remove();
+
+					// if(data.score.pos > 60 && (!$('ul.percentage img')))
+					// 	$('ul.percentage').prepend('<img src="https://media.giphy.com/media/dkGhBWE3SyzXW/giphy.gif">')
+					// else
+					// 	$('ul.percentage img').remove();
+
+					posCounter.css("width", data.score.pos + '%');
+					posPer.text(Math.round(data.score.pos*10)/10 + '%');
+					negCounter.css("width", data.score.neg + '%');
+					negPer.text(Math.round(data.score.neg*10)/10 + '%');
+				});
+
+				var fposTweetList = $('ul.fpostweets');
+				var fnegTweetList = $('ul.fnegtweets');
+				var fposCounter = $('li.fpos');
+				var fnegCounter = $('li.fneg');
+				var fposPer = $('li.fpos span');
+				var fnegPer = $('li.fneg span');
+
+				socket.on('fb', function(data){
+					if(data.set > 0) {
+						$('.fpospro').remove();
+						fposTweetList.prepend('<li class="collection-item avatar">' + '<a href="' + data.link + '"><span class="title">' + data.message  + '(' + data.set + ')' + '</span></a></li>');
+					}
+					if(data.set < 0) {
+						$('.fnegpro').remove();
+						fnegTweetList.prepend('<li class="collection-item avatar">' + '<a href="' + data.link + '"><span class="title">' + data.message  + '(' + data.set + ')' + '</span></a></li>');
+					}
+					
+					if($('ul.fpostweets li').length > 5)
+						$('ul.fpostweets li:last-child').remove();
+					if($('ul.fnegtweets li').length > 5)
+						$('ul.fnegtweets li:last-child').remove();
+
+					fposCounter.css("width", data.score.pos + '%');
+					fposPer.text(Math.round(data.score.pos*10)/10 + '%');
+					fnegCounter.css("width", data.score.neg + '%');
+					fnegPer.text(Math.round(data.score.neg*10)/10 + '%');
+				});
+
+				socket.on('error', function(data){
+					console.log(data);
+				});
+			});
+		</script>
+	</body>
+</html>
